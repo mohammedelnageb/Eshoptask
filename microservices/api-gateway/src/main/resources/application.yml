@@ -1,0 +1,106 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/products/**
+          filters:
+            - StripPrefix=0
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenish-rate: 10
+                redis-rate-limiter.burst-capacity: 20
+        
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/orders/**
+          filters:
+            - StripPrefix=0
+        
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**,/api/v1/auth/**
+          filters:
+            - StripPrefix=0
+        
+        - id: inventory-service
+          uri: lb://inventory-service
+          predicates:
+            - Path=/api/v1/inventory/**
+          filters:
+            - StripPrefix=0
+        
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notifications/**
+          filters:
+            - StripPrefix=0
+        
+        - id: product-service-swagger
+          uri: lb://product-service
+          predicates:
+            - Path=/swagger-ui.html
+            - After=2024-01-01T00:00:00Z
+        
+        - id: order-service-swagger
+          uri: lb://order-service
+          predicates:
+            - Path=/order-swagger.html
+        
+        - id: user-service-swagger
+          uri: lb://user-service
+          predicates:
+            - Path=/user-swagger.html
+        
+        - id: inventory-service-swagger
+          uri: lb://inventory-service
+          predicates:
+            - Path=/inventory-swagger.html
+        
+        - id: notification-service-swagger
+          uri: lb://notification-service
+          predicates:
+            - Path=/notification-swagger.html
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:3000,http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            maxAge: 3600
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.techshop: DEBUG

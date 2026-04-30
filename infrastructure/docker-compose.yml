@@ -1,0 +1,469 @@
+services:
+  # ==================== DATABASES ====================
+  # PostgreSQL Database for Product Service
+  product-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: techshop_product
+      POSTGRES_USER: techshop
+      POSTGRES_PASSWORD: techshop
+    ports:
+      - "5432:5432"
+    volumes:
+      - product-db-data:/var/lib/postgresql/data
+    networks:
+      - techshop-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techshop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL Database for Order Service
+  order-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: techshop_order
+      POSTGRES_USER: techshop
+      POSTGRES_PASSWORD: techshop
+    ports:
+      - "5433:5432"
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+    networks:
+      - techshop-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techshop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL Database for User Service
+  user-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: techshop_user
+      POSTGRES_USER: techshop
+      POSTGRES_PASSWORD: techshop
+    ports:
+      - "5434:5432"
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    networks:
+      - techshop-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techshop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL Database for Inventory Service
+  inventory-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: techshop_inventory
+      POSTGRES_USER: techshop
+      POSTGRES_PASSWORD: techshop
+    ports:
+      - "5435:5432"
+    volumes:
+      - inventory-db-data:/var/lib/postgresql/data
+    networks:
+      - techshop-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U techshop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB for Notification Service
+  mongodb:
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_DATABASE: techshop_notifications
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - techshop-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== CACHING & MESSAGE BROKER ====================
+  # Redis for Caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - techshop-network
+    command: redis-server --appendonly yes --requirepass redispass
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redispass", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Zookeeper for Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - techshop-network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo stat | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Kafka Message Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+    networks:
+      - techshop-network
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== AUTHENTICATION ====================
+  # Keycloak for OAuth2/OIDC
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: dev-file
+      KC_HEALTH_ENABLED: "true"
+      KC_PROXY: edge
+    ports:
+      - "8180:8080"
+    networks:
+      - techshop-network
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -ec 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; grep -q \"200\" <&3'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ==================== MANAGEMENT & MONITORING ====================
+  # Kafka UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      - kafka
+    ports:
+      - "8089:8080"
+    networks:
+      - techshop-network
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+
+  # pgAdmin for PostgreSQL Management
+  pgadmin:
+    image: dpage/pgadmin4:8
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@techshop.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - techshop-network
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+
+  # Mailhog for Email Testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - techshop-network
+
+  # Prometheus for Metrics
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    networks:
+      - techshop-network
+    volumes:
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    environment:
+      - TZ=UTC
+
+  # Grafana for Visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    networks:
+      - techshop-network
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: admin
+      GF_INSTALL_PLUGINS: 'grafana-clock-panel'
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  # ==================== MICROSERVICES ====================
+  # API Gateway
+  api-gateway:
+    build:
+      context: ../microservices/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - techshop-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      SPRING_APPLICATION_NAME: api-gateway
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PASSWORD: redispass
+      KEYCLOAK_SERVER_URL: http://keycloak:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Product Service
+  product-service:
+    build:
+      context: ../microservices/product-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    networks:
+      - techshop-network
+    depends_on:
+      product-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: product-service
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://product-db:5432/techshop_product
+      SPRING_DATASOURCE_USERNAME: techshop
+      SPRING_DATASOURCE_PASSWORD: techshop
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PASSWORD: redispass
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Order Service
+  order-service:
+    build:
+      context: ../microservices/order-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    networks:
+      - techshop-network
+    depends_on:
+      order-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: order-service
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://order-db:5432/techshop_order
+      SPRING_DATASOURCE_USERNAME: techshop
+      SPRING_DATASOURCE_PASSWORD: techshop
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # User Service
+  user-service:
+    build:
+      context: ../microservices/user-service
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    networks:
+      - techshop-network
+    depends_on:
+      user-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      SPRING_APPLICATION_NAME: user-service
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/techshop_user
+      SPRING_DATASOURCE_USERNAME: techshop
+      SPRING_DATASOURCE_PASSWORD: techshop
+      KEYCLOAK_SERVER_URL: http://keycloak:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Inventory Service
+  inventory-service:
+    build:
+      context: ../microservices/inventory-service
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
+    networks:
+      - techshop-network
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: inventory-service
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://inventory-db:5432/techshop_inventory
+      SPRING_DATASOURCE_USERNAME: techshop
+      SPRING_DATASOURCE_PASSWORD: techshop
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ../microservices/notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8085"
+    networks:
+      - techshop-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: notification-service
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_URI: mongodb://admin:admin@mongodb:27017/techshop_notifications?authSource=admin
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_MAIL_HOST: mailhog
+      SPRING_MAIL_PORT: 1025
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==================== FRONTEND ====================
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    networks:
+      - techshop-network
+    depends_on:
+      - api-gateway
+    environment:
+      VITE_API_URL: http://localhost:8080
+      VITE_SOCKET_URL: http://localhost:8080
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  techshop-network:
+    driver: bridge
+
+volumes:
+  # Databases
+  product-db-data:
+  order-db-data:
+  user-db-data:
+  inventory-db-data:
+  mongodb-data:
+  
+  # Caching & Message Broker
+  redis-data:
+  
+  # Authentication
+  keycloak-data:
+  
+  # Management
+  pgadmin-data:
+  
+  # Monitoring
+  prometheus-data:
+  grafana-data:
