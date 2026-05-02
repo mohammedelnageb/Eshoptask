@@ -84,5 +84,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: azure/setup-kubectl@v4
-      - run: kubectl apply --dry-run=client --validate=false -f infrastructure/kubernetes
+      - name: Validate Kubernetes manifests
+        run: |
+          docker run --rm \
+            -v "${PWD}/infrastructure/kubernetes:/manifests:ro" \
+            ghcr.io/yannh/kubeconform:latest \
+            -strict \
+            -ignore-missing-schemas \
+            -summary \
+            /manifests
