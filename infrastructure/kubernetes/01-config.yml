@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: techshop-secrets
+  namespace: techshop
+type: Opaque
+stringData:
+  postgres-user: techshop
+  postgres-password: techshop
+  mongodb-user: admin
+  mongodb-password: admin
+  redis-password: redispass
+  keycloak-admin: admin
+  keycloak-admin-password: admin
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: techshop-config
+  namespace: techshop
+data:
+  kafka-bootstrap-servers: kafka:29092
+  keycloak-url: http://keycloak:8080
+  keycloak-issuer: http://keycloak:8080/realms/techshop
+  frontend-origin: http://techshop.local

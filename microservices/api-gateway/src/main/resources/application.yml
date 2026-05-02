@@ -4,6 +4,11 @@ server:
 spring:
   application:
     name: api-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/techshop
   cloud:
     gateway:
       routes:
@@ -95,7 +100,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,gateway
+        include: health,info,metrics,prometheus,gateway
   endpoint:
     health:
       show-details: always
@@ -104,3 +109,7 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     com.techshop: DEBUG
+
+techshop:
+  security:
+    permit-all: true

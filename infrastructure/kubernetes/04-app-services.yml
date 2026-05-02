@@ -1,0 +1,313 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: techshop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: techshop/api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_DATA_REDIS_HOST
+              value: redis
+            - name: TECHSHOP_SECURITY_PERMIT_ALL
+              value: "false"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: techshop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      containers:
+        - name: product-service
+          image: techshop/product-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://product-db:5432/techshop_product
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: techshop-config
+                  key: kafka-bootstrap-servers
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: techshop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: techshop/order-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://order-db:5432/techshop_order
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: techshop-config
+                  key: kafka-bootstrap-servers
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: techshop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: techshop/user-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://user-db:5432/techshop_user
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: techshop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inventory-service
+  template:
+    metadata:
+      labels:
+        app: inventory-service
+    spec:
+      containers:
+        - name: inventory-service
+          image: techshop/inventory-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://inventory-db:5432/techshop_inventory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: techshop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: techshop/notification-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_DATA_MONGODB_URI
+              value: mongodb://admin:admin@mongodb:27017/techshop_notifications?authSource=admin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: techshop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: techshop/payment-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8086
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: techshop-config
+                  key: kafka-bootstrap-servers
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: techshop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: techshop/frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: techshop
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  namespace: techshop
+spec:
+  selector:
+    app: product-service
+  ports:
+    - port: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: techshop
+spec:
+  selector:
+    app: order-service
+  ports:
+    - port: 8082
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: techshop
+spec:
+  selector:
+    app: user-service
+  ports:
+    - port: 8083
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+  namespace: techshop
+spec:
+  selector:
+    app: inventory-service
+  ports:
+    - port: 8084
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: techshop
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - port: 8085
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: techshop
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - port: 8086
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: techshop
+spec:
+  selector:
+    app: frontend
+  ports:
+    - port: 80

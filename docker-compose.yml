@@ -157,7 +157,7 @@ services:
   # Keycloak for OAuth2/OIDC
   keycloak:
     image: quay.io/keycloak/keycloak:23.0
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -170,6 +170,7 @@ services:
       - techshop-network
     volumes:
       - keycloak-data:/opt/keycloak/data
+      - ./infrastructure/keycloak/techshop-realm.json:/opt/keycloak/data/import/techshop-realm.json:ro
     healthcheck:
       test: ["CMD-SHELL", "bash -ec 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; grep -q \"200\" <&3'"]
       interval: 30s
@@ -222,6 +223,8 @@ services:
       - techshop-network
     volumes:
       - prometheus-data:/prometheus
+      - ./infrastructure/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infrastructure/observability/alerts.yml:/etc/prometheus/alerts.yml:ro
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -419,6 +422,29 @@ services:
       SPRING_MAIL_PORT: 1025
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Mock Payment Service
+  payment-service:
+    build:
+      context: ./microservices/payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "8086:8086"
+    networks:
+      - techshop-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: payment-service
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      TECHSHOP_PAYMENT_FAILURE_THRESHOLD: "10000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3

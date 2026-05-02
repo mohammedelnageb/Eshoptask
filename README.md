@@ -97,6 +97,7 @@ The root `docker-compose.yml` is recommended. The `infrastructure/` folder conta
 | user-service | 8083 | 8083 | Users, registration, login, refresh/logout | PostgreSQL |
 | inventory-service | 8084 | 8084 | Stock, reservations, restock | PostgreSQL |
 | notification-service | 8085 | 8085 | Notifications and email events | MongoDB |
+| payment-service | 8086 | 8086 | Mock payment gateway and payment result events | Kafka |
 | product-db | 5432 | 5432 | Product database | volume |
 | order-db | 5432 | 5433 | Order database | volume |
 | user-db | 5432 | 5434 | User database | volume |
@@ -111,6 +112,17 @@ The root `docker-compose.yml` is recommended. The `infrastructure/` folder conta
 | mailhog | 1025/8025 | 1025/8025 | Local email testing | none |
 | prometheus | 9090 | 9090 | Metrics | volume |
 | grafana | 3000 | 3001 | Dashboards | volume |
+
+Additional production-readiness artifacts:
+
+- Architecture and DDD notes: `docs/ARCHITECTURE.md`
+- API contract notes: `docs/API_CONTRACTS.md`
+- Testing and operations guide: `docs/TESTING_AND_OPERATIONS.md`
+- Kubernetes manifests: `infrastructure/kubernetes/`
+- Keycloak realm import: `infrastructure/keycloak/techshop-realm.json`
+- Prometheus scrape and alert config: `infrastructure/observability/`
+- CI pipeline: `.github/workflows/ci.yml`
+- k6 load test: `tests/load/k6-checkout.js`
 
 ## Technology Stack
 

@@ -1,0 +1,107 @@
+{
+  "realm": "techshop",
+  "enabled": true,
+  "displayName": "TechShop",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "roles": {
+    "realm": [
+      { "name": "CUSTOMER", "description": "Can browse products, manage cart, and place orders" },
+      { "name": "ADMIN", "description": "Can manage catalog, inventory, and orders" },
+      { "name": "SHOP_OWNER", "description": "Can manage a tenant shop or brand" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "techshop-frontend",
+      "name": "TechShop Frontend",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:5173"
+      ],
+      "defaultClientScopes": ["web-origins", "profile", "email", "roles"]
+    },
+    {
+      "clientId": "techshop-api",
+      "name": "TechShop API",
+      "enabled": true,
+      "bearerOnly": true
+    }
+  ],
+  "users": [
+    {
+      "username": "demo@techshop.com",
+      "email": "demo@techshop.com",
+      "firstName": "Demo",
+      "lastName": "Customer",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["CUSTOMER"]
+    },
+    {
+      "username": "admin@techshop.com",
+      "email": "admin@techshop.com",
+      "firstName": "TechShop",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Admin123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN", "SHOP_OWNER"]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": false,
+      "config": {
+        "clientId": "${GOOGLE_CLIENT_ID}",
+        "clientSecret": "${GOOGLE_CLIENT_SECRET}",
+        "syncMode": "IMPORT"
+      }
+    },
+    {
+      "alias": "github",
+      "providerId": "github",
+      "enabled": false,
+      "config": {
+        "clientId": "${GITHUB_CLIENT_ID}",
+        "clientSecret": "${GITHUB_CLIENT_SECRET}",
+        "syncMode": "IMPORT"
+      }
+    },
+    {
+      "alias": "facebook",
+      "providerId": "facebook",
+      "enabled": false,
+      "config": {
+        "clientId": "${FACEBOOK_CLIENT_ID}",
+        "clientSecret": "${FACEBOOK_CLIENT_SECRET}",
+        "syncMode": "IMPORT"
+      }
+    }
+  ]
+}
