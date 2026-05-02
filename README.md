@@ -92,17 +92,13 @@ The frontend never calls backend containers directly. In the browser it uses rel
 |-- infrastructure/
 |   |-- keycloak/
 |   |-- kubernetes/
-|   |-- observability/
-|   |-- docker-compose.yml
-|   |-- DOCKER_COMPOSE_GUIDE.md
-|   |-- start.bat
-|   `-- start.sh
+|   `-- observability/
 |-- docs/
 |-- tests/
 `-- src/
 ```
 
-The root `docker-compose.yml` is recommended. The `infrastructure/` folder contains an additional compose file and helper scripts from the original project structure.
+The root `docker-compose.yml` is the only Docker Compose entrypoint. The `infrastructure/` folder contains production-readiness assets for Keycloak, Kubernetes, and observability.
 
 ## Services
 
