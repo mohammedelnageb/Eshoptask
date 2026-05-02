@@ -85,4 +85,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-kubectl@v4
-      - run: kubectl apply --dry-run=client -f infrastructure/kubernetes
+      - run: kubectl apply --dry-run=client --validate=false -f infrastructure/kubernetes

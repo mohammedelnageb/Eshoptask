@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: order-service
+  cloud:
+    config:
+      enabled: false
   security:
     oauth2:
       resourceserver:
