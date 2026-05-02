@@ -1,5 +1,7 @@
 # TechShop E-Commerce Microservices
 
+[![TechShop CI](https://github.com/mohammedelnageb/Eshoptask/actions/workflows/ci.yml/badge.svg)](https://github.com/mohammedelnageb/Eshoptask/actions/workflows/ci.yml)
+
 TechShop is a Docker Compose based e-commerce demo built with a React frontend, a Spring Cloud API gateway, and several Spring Boot microservices. It includes product browsing, category filtering, search, product reviews, registration/login, cart, checkout, order creation, inventory, notifications, Kafka messaging, PostgreSQL, MongoDB, Redis, Keycloak, and basic monitoring tools.
 
 This README explains the architecture, each part of the project, how to run it, how to use the app, and how to troubleshoot the common problems.
@@ -7,6 +9,14 @@ This README explains the architecture, each part of the project, how to run it, 
 ## Current Status
 
 The root `docker-compose.yml` is the main way to run the project.
+
+The GitHub Actions pipeline is passing on `main`. It validates:
+
+- Frontend TypeScript build and Jest coverage command
+- Backend Maven tests for every service
+- Kubernetes manifest schemas
+- Docker builds for frontend and all microservices
+- Trivy vulnerability scan reporting
 
 Working user-facing flows:
 
@@ -18,6 +28,7 @@ Working user-facing flows:
 - Registration and login with demo auth endpoints
 - Cart
 - Checkout and order placement
+- Mock payment workflow through Kafka
 
 Demo login:
 
@@ -46,6 +57,7 @@ API Gateway: Spring Cloud Gateway
   +--> User Service          --> PostgreSQL user-db
   +--> Inventory Service     --> PostgreSQL inventory-db
   +--> Notification Service  --> MongoDB
+  +--> Payment Service       --> Kafka payment results
   |
   +--> Redis
   +--> Kafka + Zookeeper
@@ -75,12 +87,18 @@ The frontend never calls backend containers directly. In the browser it uses rel
 |   |-- order-service/
 |   |-- user-service/
 |   |-- inventory-service/
-|   `-- notification-service/
+|   |-- notification-service/
+|   `-- payment-service/
 |-- infrastructure/
+|   |-- keycloak/
+|   |-- kubernetes/
+|   |-- observability/
 |   |-- docker-compose.yml
 |   |-- DOCKER_COMPOSE_GUIDE.md
 |   |-- start.bat
 |   `-- start.sh
+|-- docs/
+|-- tests/
 `-- src/
 ```
 
@@ -892,16 +910,66 @@ npm run dev
 
 Docker is recommended because service discovery depends on Docker DNS names such as `product-service`, `order-service`, and `api-gateway`.
 
+## Validation
+
+The CI workflow runs automatically after every push to GitHub:
+
+```text
+https://github.com/mohammedelnageb/Eshoptask/actions/workflows/ci.yml
+```
+
+Useful local checks:
+
+```powershell
+# Validate Docker Compose syntax
+docker compose config --quiet
+
+# Run one backend service test suite
+cd microservices/order-service
+mvn test
+
+# Run frontend build and test commands
+cd frontend
+npm install --legacy-peer-deps --no-audit --no-fund
+npm run build:tsc
+npm run test:coverage -- --watchAll=false
+
+# Run Playwright checks after the app is running
+cd frontend
+npm run test:e2e
+npm run test:a11y
+```
+
+Load testing:
+
+```powershell
+k6 run tests/load/k6-checkout.js
+```
+
 ## Security Notes
 
 This project is currently configured for local demo use.
 
 - Demo auth endpoints are implemented in user-service.
 - Gateway/order/product service security is permissive enough for the demo frontend.
-- Keycloak is included in compose, but the working demo flow does not require full Keycloak realm setup.
+- Keycloak is included in compose, and a development realm import exists in `infrastructure/keycloak/techshop-realm.json`.
 - Do not use the current demo passwords, permissive security config, or generated demo tokens in production.
 
 For production, restore strict JWT validation, configure Keycloak realms/clients, use HTTPS, move secrets to a secret manager, and restrict service-to-service access.
+
+## Before Production
+
+These items still require real environment setup or business decisions:
+
+- Replace all demo passwords and placeholder Kubernetes secrets.
+- Configure real Google/GitHub/Facebook OAuth client IDs and secrets in Keycloak.
+- Provide a real TLS certificate for the Kubernetes `techshop-tls` secret.
+- Decide whether to keep the mock payment service or replace it with Stripe/PayPal sandbox integration.
+- Connect a real secret manager such as Vault, External Secrets Operator, or sealed secrets.
+- Review Trivy scan output and upgrade base images/dependencies as needed.
+- Run the k6 load test against your target machine or cluster and save the report.
+- Run Lighthouse or axe against the deployed UI and keep the accessibility report.
+- If you deploy to Kubernetes, build and push the `techshop/*:latest` images to a registry that your cluster can pull from.
 
 ## Useful Commands
 
@@ -937,10 +1005,9 @@ Invoke-WebRequest -UseBasicParsing http://localhost:8080/actuator/health
 
 ## What To Improve Next
 
-- Add automated integration tests for the main browser flows.
-- Add full Keycloak realm import and use real JWT tokens everywhere.
-- Add request validation DTOs for all services.
-- Add frontend route guards and better error messages.
-- Add OpenAPI examples for all services.
-- Add Prometheus scrape configuration for the Spring Boot actuator endpoints.
-- Add CI builds for frontend and each microservice.
+- Add real frontend unit tests so the configured 80% coverage target becomes meaningful.
+- Add Pact contract tests for cross-service APIs and Kafka message contracts.
+- Replace demo auth tokens with full Keycloak/OIDC login in the frontend.
+- Connect order creation to inventory reservation/release for complete stock rollback behavior.
+- Add production Grafana dashboards and alert notification channels.
+- Add OpenAPI examples for every service endpoint.
