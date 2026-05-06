@@ -25,11 +25,13 @@ import { addToCart } from '../store/slices/cartSlice'
 import { productAPI } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
+import { useIntlSettings } from '../i18n/IntlContext'
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
+  const { formatMoney, t } = useIntlSettings()
   const { currentProduct, loading, error } = useSelector((state: RootState) => state.products)
   const [quantity, setQuantity] = useState(1)
   const [reviews, setReviews] = useState<any[]>([])
@@ -101,7 +103,7 @@ export default function ProductDetail() {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <ErrorMessage message={error || 'Product not found'} />
-        <Button onClick={() => navigate('/products')}>Back to Products</Button>
+        <Button onClick={() => navigate('/products')}>{t('product.back')}</Button>
       </Container>
     )
   }
@@ -113,7 +115,7 @@ export default function ProductDetail() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Button onClick={() => navigate('/products')} sx={{ mb: 2 }}>
-        ← Back to Products
+        {t('product.back')}
       </Button>
 
       <Grid container spacing={4}>
@@ -141,16 +143,16 @@ export default function ProductDetail() {
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
             <Rating value={currentProduct.averageRating} readOnly />
             <Typography variant="body2" color="text.secondary">
-              {currentProduct.reviewCount} reviews
+              {currentProduct.reviewCount} {t('product.reviews')}
             </Typography>
           </Box>
 
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Brand: <strong>{currentProduct.brand}</strong>
+            {t('product.brand')}: <strong>{currentProduct.brand}</strong>
           </Typography>
 
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Category: <strong>{currentProduct.category}</strong>
+            {t('product.category')}: <strong>{currentProduct.category}</strong>
           </Typography>
 
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
@@ -166,10 +168,10 @@ export default function ProductDetail() {
             {currentProduct.discountedPrice ? (
               <>
                 <Typography variant="h5" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
-                  ${currentProduct.price.toFixed(2)}
+                  {formatMoney(currentProduct.price)}
                 </Typography>
                 <Typography variant="h4" color="error" sx={{ fontWeight: 'bold' }}>
-                  ${currentProduct.discountedPrice.toFixed(2)}
+                  {formatMoney(currentProduct.discountedPrice)}
                 </Typography>
                 <Box
                   sx={{
@@ -185,7 +187,7 @@ export default function ProductDetail() {
               </>
             ) : (
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                ${currentProduct.price.toFixed(2)}
+                {formatMoney(currentProduct.price)}
               </Typography>
             )}
           </Stack>
@@ -194,7 +196,7 @@ export default function ProductDetail() {
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
             <TextField
               type="number"
-              label="Quantity"
+              label={t('product.quantity')}
               value={quantity}
               onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
               inputProps={{ min: 1 }}
@@ -207,13 +209,13 @@ export default function ProductDetail() {
               onClick={handleAddToCart}
               sx={{ flexGrow: 1 }}
             >
-              Add to Cart
+              {t('products.addToCart')}
             </Button>
           </Stack>
 
           {addedToCart && (
             <Alert severity="success" sx={{ mb: 2 }}>
-              Product added to cart successfully!
+              {t('product.added')}
             </Alert>
           )}
         </Grid>
@@ -222,7 +224,7 @@ export default function ProductDetail() {
       {/* Reviews Section */}
       <Box sx={{ mt: 6 }}>
         <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-          Customer Reviews
+          {t('product.reviews')}
         </Typography>
 
         <Button
@@ -230,7 +232,7 @@ export default function ProductDetail() {
           onClick={() => setReviewDialog(true)}
           sx={{ mb: 3 }}
         >
-          Write a Review
+          {t('product.writeReview')}
         </Button>
 
         <Stack spacing={2}>
@@ -255,7 +257,7 @@ export default function ProductDetail() {
 
       {/* Review Dialog */}
       <Dialog open={reviewDialog} onClose={() => setReviewDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Write a Review</DialogTitle>
+        <DialogTitle>{t('product.writeReview')}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2}>
             <Box>

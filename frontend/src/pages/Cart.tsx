@@ -23,10 +23,12 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import { RootState, AppDispatch } from '../store'
 import { removeFromCart, updateQuantity, clearCart } from '../store/slices/cartSlice'
+import { useIntlSettings } from '../i18n/IntlContext'
 
 export default function Cart() {
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
+  const { formatMoney, t } = useIntlSettings()
   const { items, totalAmount } = useSelector((state: RootState) => state.cart)
   const [openDialog, setOpenDialog] = useState(false)
   const [selectedItem, setSelectedItem] = useState<any>(null)
@@ -53,14 +55,14 @@ export default function Cart() {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Typography variant="h4" sx={{ mb: 3, fontWeight: 'bold' }}>
-          Shopping Cart
+          {t('cart.title')}
         </Typography>
         <Box sx={{ textAlign: 'center', py: 6 }}>
           <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-            Your cart is empty
+            {t('cart.empty')}
           </Typography>
           <Button variant="contained" onClick={() => navigate('/products')}>
-            Continue Shopping
+            {t('cart.continue')}
           </Button>
         </Box>
       </Container>
@@ -70,18 +72,18 @@ export default function Cart() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" sx={{ mb: 3, fontWeight: 'bold' }}>
-        Shopping Cart
+        {t('cart.title')}
       </Typography>
 
       <TableContainer component={Paper} sx={{ mb: 3 }}>
         <Table>
           <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
             <TableRow>
-              <TableCell>Product</TableCell>
-              <TableCell align="right">Unit Price</TableCell>
-              <TableCell align="center">Quantity</TableCell>
-              <TableCell align="right">Total</TableCell>
-              <TableCell align="center">Actions</TableCell>
+              <TableCell>{t('cart.product')}</TableCell>
+              <TableCell align="right">{t('cart.unitPrice')}</TableCell>
+              <TableCell align="center">{t('cart.quantity')}</TableCell>
+              <TableCell align="right">{t('cart.total')}</TableCell>
+              <TableCell align="center">{t('cart.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -107,11 +109,11 @@ export default function Cart() {
                     </Box>
                   </Stack>
                 </TableCell>
-                <TableCell align="right">${item.unitPrice.toFixed(2)}</TableCell>
+                <TableCell align="right">{formatMoney(item.unitPrice)}</TableCell>
                 <TableCell align="center">{item.quantity}</TableCell>
                 <TableCell align="right">
                   <Typography sx={{ fontWeight: 'bold' }}>
-                    ${item.totalPrice.toFixed(2)}
+                    {formatMoney(item.totalPrice)}
                   </Typography>
                 </TableCell>
                 <TableCell align="center">
@@ -122,7 +124,7 @@ export default function Cart() {
                       startIcon={<EditIcon />}
                       onClick={() => handleOpenDialog(item)}
                     >
-                      Edit
+                      {t('cart.edit')}
                     </Button>
                     <Button
                       size="small"
@@ -131,7 +133,7 @@ export default function Cart() {
                       startIcon={<DeleteIcon />}
                       onClick={() => handleRemoveItem(item.productId)}
                     >
-                      Remove
+                      {t('cart.remove')}
                     </Button>
                   </Stack>
                 </TableCell>
@@ -143,18 +145,18 @@ export default function Cart() {
 
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Button variant="outlined" onClick={() => navigate('/products')}>
-          Continue Shopping
+          {t('cart.continue')}
         </Button>
         <Box sx={{ textAlign: 'right' }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Subtotal: <strong>${totalAmount.toFixed(2)}</strong>
+            {t('cart.subtotal')}: <strong>{formatMoney(totalAmount)}</strong>
           </Typography>
           <Stack direction="row" spacing={2}>
             <Button variant="outlined" onClick={() => dispatch(clearCart())}>
-              Clear Cart
+              {t('cart.clear')}
             </Button>
             <Button variant="contained" onClick={() => navigate('/checkout')} size="large">
-              Proceed to Checkout
+              {t('cart.checkout')}
             </Button>
           </Stack>
         </Box>
@@ -162,14 +164,14 @@ export default function Cart() {
 
       {/* Edit Quantity Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Update Quantity</DialogTitle>
+        <DialogTitle>{t('cart.updateQuantity')}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography>Product: {selectedItem?.productName}</Typography>
           </Box>
           <TextField
             type="number"
-            label="Quantity"
+            label={t('cart.quantity')}
             value={quantity}
             onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
             inputProps={{ min: 1 }}
@@ -178,9 +180,9 @@ export default function Cart() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button onClick={() => setOpenDialog(false)}>{t('cart.cancel')}</Button>
           <Button onClick={handleUpdateQuantity} variant="contained">
-            Update
+            {t('cart.update')}
           </Button>
         </DialogActions>
       </Dialog>

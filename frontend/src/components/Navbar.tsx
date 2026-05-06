@@ -1,16 +1,30 @@
-import { AppBar, Toolbar, Box, Button, Badge, Menu, MenuItem, Avatar, Typography } from '@mui/material'
+import {
+  AppBar,
+  Toolbar,
+  Box,
+  Button,
+  Badge,
+  Menu,
+  MenuItem,
+  Avatar,
+  Typography,
+  FormControl,
+  Select,
+  Tooltip,
+} from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { useState } from 'react'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import { RootState, AppDispatch } from '../store'
 import { logout } from '../store/slices/authSlice'
+import { useIntlSettings } from '../i18n/IntlContext'
 
 export default function Navbar() {
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((state: RootState) => state.auth)
   const { itemCount } = useSelector((state: RootState) => state.cart)
+  const { language, currency, setLanguage, setCurrency, t } = useIntlSettings()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -45,17 +59,52 @@ export default function Navbar() {
 
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Button color="inherit" component={RouterLink} to="/">
-            Home
+            {t('nav.home')}
           </Button>
           <Button color="inherit" component={RouterLink} to="/products">
-            Products
+            {t('nav.products')}
           </Button>
 
           {user?.roles?.includes('ADMIN') && (
             <Button color="inherit" component={RouterLink} to="/admin">
-              Admin
+              {t('nav.admin')}
             </Button>
           )}
+
+          <Tooltip title={t('settings.language')}>
+            <FormControl size="small" sx={{ minWidth: 76 }}>
+              <Select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as 'en' | 'ar')}
+                sx={{
+                  color: 'white',
+                  '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.6)' },
+                  '.MuiSvgIcon-root': { color: 'white' },
+                }}
+              >
+                <MenuItem value="en">EN</MenuItem>
+                <MenuItem value="ar">AR</MenuItem>
+              </Select>
+            </FormControl>
+          </Tooltip>
+
+          <Tooltip title={t('settings.currency')}>
+            <FormControl size="small" sx={{ minWidth: 88 }}>
+              <Select
+                value={currency}
+                onChange={(event) => setCurrency(event.target.value as 'USD' | 'EUR' | 'EGP')}
+                sx={{
+                  color: 'white',
+                  '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.6)' },
+                  '.MuiSvgIcon-root': { color: 'white' },
+                }}
+              >
+                <MenuItem value="USD">USD</MenuItem>
+                <MenuItem value="EUR">EUR</MenuItem>
+                <MenuItem value="EGP">EGP</MenuItem>
+              </Select>
+            </FormControl>
+          </Tooltip>
 
           <Button
             color="inherit"
@@ -79,18 +128,18 @@ export default function Navbar() {
               </Button>
               <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
                 <MenuItem component={RouterLink} to="/profile" onClick={handleMenuClose}>
-                  Profile
+                  {t('nav.profile')}
                 </MenuItem>
                 <MenuItem component={RouterLink} to="/orders" onClick={handleMenuClose}>
-                  My Orders
+                  {t('nav.orders')}
                 </MenuItem>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                <MenuItem onClick={handleLogout}>{t('nav.logout')}</MenuItem>
               </Menu>
             </>
           ) : (
             <>
               <Button color="inherit" component={RouterLink} to="/login">
-                Login
+                {t('nav.login')}
               </Button>
               <Button
                 variant="outlined"
@@ -98,7 +147,7 @@ export default function Navbar() {
                 component={RouterLink}
                 to="/register"
               >
-                Register
+                {t('nav.register')}
               </Button>
             </>
           )}

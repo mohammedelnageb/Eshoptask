@@ -11,6 +11,7 @@ import Register from './pages/Register'
 import Profile from './pages/Profile'
 import Orders from './pages/Orders'
 import AdminDashboard from './pages/AdminDashboard'
+import { useIntlSettings } from './i18n/IntlContext'
 
 const theme = createTheme({
   palette: {
@@ -24,10 +25,12 @@ const theme = createTheme({
 })
 
 function App() {
+  const { direction } = useIntlSettings()
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }} dir={direction}>
         <Navbar />
         <Box component="main" sx={{ flex: 1, py: 2 }}>
           <Routes>

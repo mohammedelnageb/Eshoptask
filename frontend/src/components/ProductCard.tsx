@@ -15,6 +15,7 @@ import { addToCart } from '../store/slices/cartSlice'
 import { AppDispatch } from '../store'
 import { Product } from '../store/slices/productSlice'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
+import { useIntlSettings } from '../i18n/IntlContext'
 
 interface ProductCardProps {
   product: Product
@@ -22,6 +23,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const dispatch = useDispatch<AppDispatch>()
+  const { formatMoney, t } = useIntlSettings()
 
   const handleAddToCart = () => {
     dispatch(
@@ -97,14 +99,14 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.discountedPrice ? (
             <>
               <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.secondary' }}>
-                ${product.price.toFixed(2)}
+                {formatMoney(product.price)}
               </Typography>
               <Typography variant="h6" color="error">
-                ${product.discountedPrice.toFixed(2)}
+                {formatMoney(product.discountedPrice)}
               </Typography>
             </>
           ) : (
-            <Typography variant="h6">${product.price.toFixed(2)}</Typography>
+            <Typography variant="h6">{formatMoney(product.price)}</Typography>
           )}
         </Stack>
 
@@ -115,7 +117,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           fullWidth
           sx={{ mt: 1 }}
         >
-          Add to Cart
+          {t('products.addToCart')}
         </Button>
       </CardContent>
     </Card>

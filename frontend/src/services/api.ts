@@ -110,6 +110,7 @@ export const orderAPI = {
     }>
     shippingAddress: string
     paymentMethod: string
+    currency?: string
   }) => api.post('/orders', data),
   cancelOrder: (orderId: string) =>
     api.post(`/orders/${orderId}/cancel`),
@@ -145,11 +146,35 @@ export const userAPI = {
 }
 
 // Inventory APIs
+export interface InventoryRecord {
+  id: number
+  productId: number
+  availableQuantity: number
+  reservedQuantity: number
+  stockStatus: string
+}
+
 export const inventoryAPI = {
-  checkStock: (productId: number, quantity: number) =>
-    api.post('/inventory/check', { productId, quantity }),
+  getInventoryByProduct: (productId: number) =>
+    api.get<InventoryRecord>(`/inventory/product/${productId}`),
+  getInventoriesByProducts: (productIds: number[]) =>
+    api.post<InventoryRecord[]>('/inventory/batch', productIds),
+  reserveStock: (productId: number, quantity: number) =>
+    api.post<InventoryRecord>('/inventory/reserve', null, { params: { productId, quantity } }),
+  releaseStock: (productId: number, quantity: number) =>
+    api.post<InventoryRecord>('/inventory/release', null, { params: { productId, quantity } }),
+  checkStock: async (productId: number, quantity: number) => {
+    const response = await api.get<InventoryRecord>(`/inventory/product/${productId}`)
+    return {
+      ...response,
+      data: {
+        ...response.data,
+        inStock: response.data.availableQuantity >= quantity,
+      },
+    }
+  },
   getProductStock: (productId: number) =>
-    api.get(`/inventory/products/${productId}/stock`),
+    api.get<InventoryRecord>(`/inventory/product/${productId}`),
 }
 
 // Payment APIs

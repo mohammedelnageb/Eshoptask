@@ -19,9 +19,11 @@ import ProductCard from '../components/ProductCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 import SkeletonLoader from '../components/SkeletonLoader'
+import { useIntlSettings } from '../i18n/IntlContext'
 
 export default function ProductList() {
   const dispatch = useDispatch<AppDispatch>()
+  const { t } = useIntlSettings()
   const { products, categories, loading, error, page, totalPages } = useSelector(
     (state: RootState) => state.products
   )
@@ -52,12 +54,12 @@ export default function ProductList() {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ mb: 3, fontWeight: 'bold' }}>
-          Products
+          {t('products.title')}
         </Typography>
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
           <TextField
-            placeholder="Search products..."
+            placeholder={t('products.search')}
             value={searchQuery}
             onChange={(e) => {
               dispatch(setPage(0))
@@ -67,16 +69,16 @@ export default function ProductList() {
             size="small"
           />
           <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Category</InputLabel>
+            <InputLabel>{t('products.category')}</InputLabel>
             <Select
               value={selectedCategory}
-              label="Category"
+              label={t('products.category')}
               onChange={(e) => {
                 dispatch(setPage(0))
                 setSelectedCategory(e.target.value)
               }}
             >
-              <MenuItem value="">All Categories</MenuItem>
+              <MenuItem value="">{t('products.allCategories')}</MenuItem>
               {categories.map((category) => (
                 <MenuItem key={category} value={category}>
                   {category}
@@ -95,7 +97,7 @@ export default function ProductList() {
         <>
           {products.length === 0 ? (
             <Typography variant="h6" sx={{ textAlign: 'center', py: 4 }}>
-              No products found
+              {t('products.empty')}
             </Typography>
           ) : (
             <>
