@@ -4,14 +4,10 @@ metadata:
   name: techshop-ingress
   namespace: techshop
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/proxy-body-size: "8m"
 spec:
   ingressClassName: nginx
-  tls:
-    - hosts:
-        - techshop.local
-      secretName: techshop-tls
   rules:
     - host: techshop.local
       http:
@@ -38,7 +34,7 @@ metadata:
   namespace: techshop
 spec:
   minReplicas: 2
-  maxReplicas: 8
+  maxReplicas: 2
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment

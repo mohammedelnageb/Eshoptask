@@ -1,12 +1,12 @@
-FROM eclipse-temurin:21-jdk AS builder
+# syntax=docker/dockerfile:1
+FROM maven:3.9-eclipse-temurin-21 AS builder
 
 WORKDIR /build
 
 COPY pom.xml .
 COPY src ./src
 
-RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
-RUN mvn clean package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jre
 
